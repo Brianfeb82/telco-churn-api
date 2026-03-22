@@ -1,0 +1,10 @@
+streamlit
+pandas
+numpy
+scikit-learn
+fastapi
+uvicorn
+xgboost
+imbalanced-learn
+psycopg2-binary
+python-dotenv

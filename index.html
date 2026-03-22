@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telco Churn Predictor - API Demo</title>
+    <style>
+        :root {
+            --primary-color: #0083B8;
+            --secondary-color: #f5f7f9;
+            --text-color: #333;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: var(--white);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        button:hover {
+            background-color: #006691;
+        }
+
+        #result {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 6px;
+            display: none;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .churn {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+
+        .loyal {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h2>📊 Churn Predictor</h2>
+        <form id="predictionForm">
+            <div class="form-group">
+                <label for="tenure">Tenure (Months)</label>
+                <input type="number" id="tenure" value="12" required>
+            </div>
+            <div class="form-group">
+                <label for="monthlyCharges">Monthly Charges ($)</label>
+                <input type="number" step="0.01" id="monthlyCharges" value="70" required>
+            </div>
+            <div class="form-group">
+                <label for="totalCharges">Total Charges ($)</label>
+                <input type="number" step="0.01" id="totalCharges" value="840" required>
+            </div>
+            <button type="submit" id="submitBtn">Predict Status</button>
+        </form>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('predictionForm');
+        const resultDiv = document.getElementById('result');
+        const submitBtn = document.getElementById('submitBtn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // UI Reset
+            resultDiv.style.display = 'none';
+            submitBtn.textContent = 'Analyzing...';
+            submitBtn.classList.add('loading');
+
+            const tenure = document.getElementById('tenure').value;
+            const monthlyCharges = document.getElementById('monthlyCharges').value;
+            const totalCharges = document.getElementById('totalCharges').value;
+
+            // Credentials for Basic Auth (admin:admin123)
+            const credentials = btoa('admin:admin123');
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Basic ${credentials}`
+                    },
+                    body: JSON.stringify({
+                        tenure: parseInt(tenure),
+                        monthly_charges: parseFloat(monthlyCharges),
+                        total_charges: parseFloat(totalCharges)
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`API Error: ${response.status} - ${errorText}`);
+                }
+
+                const data = await response.json();
+
+                // Display Results
+                resultDiv.style.display = 'block';
+                resultDiv.className = data.prediction === 'Churn' ? 'churn' : 'loyal';
+                resultDiv.innerHTML = `
+                Result: ${data.prediction.toUpperCase()}<br>
+                Probability: ${(data.churn_probability * 100).toFixed(2)}%
+            `;
+
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'churn';
+                resultDiv.textContent = 'Error: ' + error.message;
+            } finally {
+                submitBtn.textContent = 'Predict Status';
+                submitBtn.classList.remove('loading');
+            }
+        });
+    </script>
+
+</body>
+
+</html>
