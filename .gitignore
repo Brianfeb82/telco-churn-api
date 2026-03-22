@@ -1,0 +1,13 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Project Specific
+.env
+predictions.db
+churn_api.log
+
+# OS
+.DS_Store
+Thumbs.db
